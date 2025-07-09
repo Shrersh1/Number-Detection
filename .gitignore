@@ -1,0 +1,14 @@
+# virtual environment
+venv/
+
+# bytecode files
+__pycache__/
+*.pyc
+*.pyo
+
+# logs / temporary files
+*.log
+*.tmp
+
+data/
+models/
