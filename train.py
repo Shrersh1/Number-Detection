@@ -1,6 +1,7 @@
 # main file to run the neural network number prediction
 import os
-import time
+import math
+import random
 
 import torch
 import torch.nn as nn
@@ -70,15 +71,48 @@ def test(model, loader, loss_fn):
     print(f'\nTest set: Average loss: {test_loss:.4f}, Accuracy: {accuracy*100:.2f}%\n')
     return test_loss, accuracy
 
-def visualize_data(loader):
-    # visualize some data from the dataset
+def visualize_labeled_data(model, loader, n = 20): 
+    # visualize some labeled data form Neural Network
+    # change n to visualize more or fewer images
+    model.eval()  # set model to evaluation mode
     data_iter = iter(loader)
     images, labels = next(data_iter)
-    fig, axes = plt.subplots(1, 5, figsize=(10, 2))
-    for i in range(5):
+    if len(images) < n:
+        print(f"Not enough images in the batch to visualize {n} images.")
+        return
+    
+    #(if you want to run model on n random images)
+    #indices = random.sample(range(len(images)), n)
+    #images = images[indices]
+    #labels = labels[indices]
+
+    images = images[:n]  # take first n images
+    labels = labels[:n]  # take first n labels
+
+    with torch.no_grad():
+        output = model(images)
+        predictions = output.argmax(dim=1) # get predicted labels
+
+    
+    cols = min(5, n)
+    rows = math.ceil(n / cols)
+
+    fig, axes = plt.subplots(rows, cols, figsize=(cols * 2.5, rows * 2.5))
+    axes = axes.flatten()  
+
+    for i in range(n):
         axes[i].imshow(images[i].squeeze(), cmap='gray')
-        axes[i].set_title(f'Label: {labels[i].item()}')
+        axes[i].set_title(f'Predicted: {predictions[i].item()}\nExpected: {labels[i].item()}')
         axes[i].axis('off')
+
+    # Hide any unused axes
+    for i in range(n, len(axes)):
+        axes[i].axis('off')
+    plt.tight_layout()
+
+    # set title for the whole figure
+    plt.suptitle('Visualizing Labeled Data from Neural Network', fontsize=16)
+    plt.subplots_adjust(top=0.9)  # adjust title position
     plt.show()
 
 def main():
@@ -90,17 +124,20 @@ def main():
 
     load_existing = False # <- switch to load existing model
     if load_existing:
-        model.load_state_dict(torch.load('model/mnist_model.pth'))
+        model.load_state_dict(torch.load('models/mnist_model.pth'))
         model.eval()
         print("Loaded existing model. Testing...")
         test(model, test_loader, loss_fn)
     else:
         print("Starting training...")
-        for epoch in range(1, 6):  # train for 5 epochs
+        for epoch in range(1, 2):  # train for 1 epoch to keep it quick and show errors
             print(f'Epoch {epoch}')
             train(model, train_loader, optimizer, loss_fn, epoch)
             test(model, test_loader, loss_fn)
-        print("Training complete.")
+        print("Training complete.")#
+
+        print("Visualizing some labeled data from Neural Network...")
+        visualize_labeled_data(model, test_loader)
 
         # Save the model
         if not os.path.exists('models'):
