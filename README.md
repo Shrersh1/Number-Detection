@@ -1,21 +1,37 @@
+
 # Number-Detection
 Neural network for detection of numbers using mnist dataset as training set
 
-## Setup
+## Setup (in bash)
 
 ### 1. Using Docker (recommended) :
-<pre> ```bash docker build -t mnist-cnn . ``` </pre>
+```bash
+ docker build -t mnist-cnn .
+```
 
 ##### run project:
-<pre> ```bash docker build -t mnist-cnn . docker run -it --rm -v $(pwd):/app mnist-cnn ``` </pre>
+```bash
+docker build -t mnist-cnn . docker run -it --rm -v $(pwd):/app mnist-cnn
+``` 
 
 
 ### 2. Using Virtual Environment (venv) :
-<pre> ``` python3 -m venv .venv 
-source .venv/bin/activate   # Windows: .venv\Scripts\activate 
-pip install -r requirements.txt ``` </pre>
+```bash
+python3 -m venv .venv 
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+(On Windows)
+```bash
+python3 -m venv .venv 
+.venv\Scripts\activate 
+pip install -r requirements.txt
+```
+
 
 ##### run project:
-<pre> ``` python main.py ``` </pre>
-
+```bash
+python main.py
+```
 
