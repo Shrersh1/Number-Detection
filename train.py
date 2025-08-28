@@ -2,10 +2,12 @@
 import os
 import math
 import random
+from PIL import Image
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
 import torchvision
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
@@ -21,6 +23,43 @@ def load_data():
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=64, shuffle=True)
     test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=64, shuffle=False)
     return train_loader, test_loader
+
+class PaintDigitsDataset(Dataset):
+    def __init__(self, img_dir, transform=None):
+        self.img_dir = img_dir
+        self.transform = transform
+        # alle Dateien in Ordner
+        self.img_files = [f for f in os.listdir(img_dir) if f.endswith(".png")]
+
+    def __len__(self):
+        return len(self.img_files)
+
+    def __getitem__(self, idx):
+        img_name = self.img_files[idx]
+        img_path = os.path.join(self.img_dir, img_name)
+        image = Image.open(img_path)
+
+        # Label aus Dateinamen extrahieren (z.B. Picture3.png -> 3)
+        label = int("".join([c for c in img_name if c.isdigit()]))
+
+        if self.transform:
+            image = self.transform(image)
+
+        return image, label
+
+
+def load_paint_data(img_dir="./paintNumbers"):
+    # gleiche Normalisierung wie MNIST
+    transform = transforms.Compose([
+        transforms.Grayscale(num_output_channels=1),   # falls farbig gemalt
+        transforms.Resize((28, 28)),                   # auf MNIST-Größe
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
+
+    dataset = PaintDigitsDataset(img_dir=img_dir, transform=transform)
+    loader = DataLoader(dataset, batch_size=64, shuffle=False)
+    return loader
 
 class Net(nn.Module):
     def __init__(self):
@@ -115,6 +154,7 @@ def visualize_labeled_data(model, loader, n = 20):
     plt.subplots_adjust(top=0.9)  # adjust title position
     plt.show()
 
+
 def main():
     # connect everything
     train_loader, test_loader = load_data()
@@ -122,12 +162,22 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     loss_fn = nn.CrossEntropyLoss()
 
-    load_existing = False # <- switch to load existing model
+    load_existing = True # <- switch to load existing model
     if load_existing:
         model.load_state_dict(torch.load('models/mnist_model.pth'))
         model.eval()
         print("Loaded existing model. Testing...")
+
         test(model, test_loader, loss_fn)
+
+        print("Visualizing self made data from Neural Network...")
+        # deinen normalen MNIST-Loader
+        train_loader, test_loader = load_data()
+
+        # jetzt dein Paint-Dataset als "test_loader"
+        paint_loader = load_paint_data("./paintNumbers")
+        visualize_labeled_data(model, paint_loader, n=10)
+
     else:
         print("Starting training...")
         for epoch in range(1, 2):  # train for 1 epoch to keep it quick and show errors
@@ -144,6 +194,8 @@ def main():
             os.makedirs('models')
         torch.save(model.state_dict(), 'models/mnist_model.pth')
         print("Model saved as models/mnist_model.pth")
+
+    # TODO: add feature to draw numbers and predict them with the model
 
 if __name__ == "__main__":
     main()
