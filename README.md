@@ -5,6 +5,14 @@ Neural network for detection of numbers using mnist dataset as training set
 ## Setup (in bash)
 
 ### 1. Using Docker (recommended) :
+
+#### Download Docker:
+```bash
+sudo apt-get update
+sudo apt-get install -y docker.io
+sudo systemctl enable --now docker
+```
+#### Build Docker: 
 ```bash
  docker build -t mnist-cnn .
 ```
