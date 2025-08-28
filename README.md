@@ -21,7 +21,7 @@ sudo systemctl enable --now docker
 ```bash
 docker build -t mnist-cnn . docker run -it --rm -v $(pwd):/app mnist-cnn
 ``` 
-
+(on Windows use $(pwd -W):/app)
 
 ### 2. Using Virtual Environment (venv) :
 ```bash

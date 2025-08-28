@@ -152,7 +152,22 @@ def visualize_labeled_data(model, loader, n = 20):
     # set title for the whole figure
     plt.suptitle('Visualizing Labeled Data from Neural Network', fontsize=16)
     plt.subplots_adjust(top=0.9)  # adjust title position
-    plt.show()
+    if(is_docker()):
+        os.makedirs("/app/outputs", exist_ok=True)
+        plt.savefig("/app/outputs/visualization.png")
+        print("Running in Docker, saving visualization to /tmp/visualization.png")
+    else:
+        print("Displaying visualization...")
+        plt.show()
+
+def is_docker():
+    # Checks, if /proc/1/cgroup contains "docker" or "kubepods"
+    # to determine if running in a container
+    try:
+        with open('/proc/1/cgroup', 'rt') as f:
+            return 'docker' in f.read() or 'kubepods' in f.read()
+    except FileNotFoundError:
+        return False
 
 
 def main():
