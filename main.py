@@ -55,6 +55,10 @@ def main():
     framework = models.CNN()
     optimizer = optim.Adam(framework.parameters(), lr=0.001)
     base_class_models.append(baseClass.Base(framework, train_loader, test_loader, optimizer, loss_fn, "CNN"))
+
+    framework = models.CNN2()
+    optimizer = optim.Adam(framework.parameters(), lr=0.002)
+    base_class_models.append(baseClass.Base(framework, train_loader, test_loader, optimizer, loss_fn, "CNN2"))
     
     cont = True 
     while(cont):
@@ -86,7 +90,7 @@ def main():
             model_name_formatted = base_model.title.replace(" ", "_").lower()
             
             if(os.path.exists(f"models/{model_name_formatted}.pth")):
-                print("FOUND 1")
+                print(f"{model_name_formatted}.pth found")
                 base_model.model.load_state_dict(torch.load(f"models/{model_name_formatted}.pth"))
                 base_model.model.eval()
                 found_models.append(base_model)
@@ -94,11 +98,25 @@ def main():
         base_class_models = found_models # making sure only trained models will be used to visualization
         print("Loading complete.")
         
-    print("Visualizing some results")
+    print("Visualizing results")
+
+    cont = True 
+    seed = random.randint(0, 2**32 - 1)
+    while(cont):
+        answer = input("Do you want to use test_loader [t] or paint_data [p]?: ")
+        if(answer == "t" or answer == "p"):
+            cont = False
     for base_model in base_class_models:
-        #paint_loader = load_paint_data()
-        #base_model.visualize(paint_loader, n = 10)
-        base_model.visualize(test_loader)
+        if(answer == "t"):
+            print("Test data chosen")
+            base_model.visualize(test_loader, seed=seed)
+        elif(answer == "p"):
+            print("Paint data chosen")
+            paint_loader = load_paint_data()
+            base_model.visualize(paint_loader, n = 20, padding=0.25, size=1.75)
+        else:
+            print("Congratulations you reaching unreachable code!")
+        
         
 if __name__ == "__main__":
     main()

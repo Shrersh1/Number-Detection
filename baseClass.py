@@ -1,5 +1,6 @@
 import os
 import math
+import random
 from PIL import Image
 
 import torch
@@ -8,6 +9,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torchvision
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from torchvision import datasets, transforms
 
 class Base:
@@ -47,7 +49,7 @@ class Base:
         print(f'\nTest set: Average loss: {test_loss:.4f}, Accuracy: {accuracy*100:.2f}%\n')
         return test_loss, accuracy
 
-    def visualize(self, loader, n = 20):
+    def visualize(self, loader, n = 60, seed=None, padding=0.15, size= 1.5):
         # loader could either be test_loader or paint data
         self.model.eval()
         data_iter = iter(loader)
@@ -56,23 +58,49 @@ class Base:
             print(f"Not enough images in the batch to visualize {n} images.")
             return
         
-        images = images[:n]  # take first n images
-        labels = labels[:n]  # take first n labels
+        if seed is None:
+            seed = random.randint(0, 2**32 - 1)
+
+        g = torch.Generator().manual_seed(seed)  
+        indices = torch.randperm(len(images), generator=g)[:n]
+
+        images = images[indices]
+        labels = labels[indices]
 
         with torch.no_grad():
             output = self.model(images)
             predictions = output.argmax(dim=1) # get predicted labels
 
-        cols = min(5, n)
+        cols = min(10, n)
         rows = math.ceil(n / cols)
 
-        fig, axes = plt.subplots(rows, cols, figsize=(cols * 1.5, rows * 1.5))
-        axes = axes.flatten()  
+        fig, axes = plt.subplots(rows, cols, figsize=(cols * size, rows * size))
+        if rows == 1:
+            axes = list(axes) if cols > 1 else [axes]
+        elif cols == 1:
+            axes = [ax for ax in axes]  # jede Zeile
+        else:
+            axes = [ax for row in axes for ax in row]
+        correct = 0
 
         for i in range(n):
             axes[i].imshow(images[i].squeeze(), cmap='gray')
-            axes[i].set_title(f'Predicted: {predictions[i].item()}\nExpected: {labels[i].item()}')
+            
             axes[i].axis('off')
+            # Farbe je nach Vorhersage
+            color = 'green' if predictions[i] == labels[i] else 'red'
+
+            # Rechteck-Rahmen um das Bild
+            rect = patches.Rectangle((0, 0), images[i].shape[1]-1, images[i].shape[0]-1,
+                                    linewidth=2, edgecolor=color, facecolor='none')
+
+            axes[i].add_patch(rect)
+            axes[i].set_title(f'Predicted: {predictions[i].item()}\nExpected: {labels[i].item()}')
+            
+            if(predictions[i].eq(labels[i])):
+                correct += 1
+
+        accuracy = correct / n * 100
 
         # Hide any unused axes
         for i in range(n, len(axes)):
@@ -81,8 +109,11 @@ class Base:
 
         # set title for the whole figure
         plt.suptitle(f"Labeled data by {self.title}", fontsize=16)
-        plt.subplots_adjust(top=0.8)  # adjust title position
+        plt.subplots_adjust(top=1-padding)  # adjust title position
+        plt.figtext(0.5, 0.01, f"Accuracy: {accuracy:.2f}%", ha="center", fontsize=12)
+        plt.subplots_adjust(bottom=padding) 
         plt.show()
+
         # save picture?
 
 class PaintDigitsDataset(Dataset):
