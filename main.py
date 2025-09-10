@@ -52,39 +52,53 @@ def main():
     optimizer = optim.Adam(framework.parameters(), lr=0.001)
     base_class_models.append(baseClass.Base(framework, train_loader, test_loader, optimizer, loss_fn, "MLP Network"))
 
-    #framework = models.CNN()
-    #optimizer = optim.Adam(framework.parameters(), lr=0.001)
-    #base_class_models.append(baseClass.Base(framework, train_loader, test_loader, optimizer, loss_fn, "CNN"))
+    framework = models.CNN()
+    optimizer = optim.Adam(framework.parameters(), lr=0.001)
+    base_class_models.append(baseClass.Base(framework, train_loader, test_loader, optimizer, loss_fn, "CNN"))
     
     cont = True 
     while(cont):
-        answer = input("Do you want to train model? [y/N]: ")
+        answer = input("Do you want to train the model/s? [y/N]: ")
         if(answer == "y" or answer == "N"):
             cont = False
     if(answer == "y"):
         print("Start training all models...")
-        for model in base_class_models:
-            print(f"Training {model.title}:")
+        for base_model in base_class_models:
+            print(f"Training {base_model.title}:")
             for epoch in range(1,2):
                 print(f'Epoch {epoch}')
-                model.train(epoch)
-                model.test() 
-        print("Training comlete.")
-
-        #TODO: save models (append titles by converting Big letters to small ones and spaces to underscores)
+                base_model.train(epoch)
+                base_model.test() 
+        print("Training comlete. Saving models...")
+        
+        for base_model in base_class_models:
+            if not os.path.exists('models'):
+                os.makedirs('models')
+            model_name_formatted = base_model.title.replace(" ", "_").lower()
+            torch.save(base_model.model.state_dict(), f'models/{model_name_formatted}.pth')
+        print("Saving complete.")
 
     else:
-        print("Not yet implemented")
-
-        #TODO: retrieve models 
+        print("Retrieving all active and trained models...")
+        found_models = []
+        # finding all .pth-models "active" (= not commented out) in code
+        for base_model in base_class_models:
+            model_name_formatted = base_model.title.replace(" ", "_").lower()
+            
+            if(os.path.exists(f"models/{model_name_formatted}.pth")):
+                print("FOUND 1")
+                base_model.model.load_state_dict(torch.load(f"models/{model_name_formatted}.pth"))
+                base_model.model.eval()
+                found_models.append(base_model)
+        
+        base_class_models = found_models # making sure only trained models will be used to visualization
+        print("Loading complete.")
         
     print("Visualizing some results")
-    for model in base_class_models:
-
+    for base_model in base_class_models:
         #paint_loader = load_paint_data()
-        #model.visualize(paint_loader, n = 10)
-
-        model.visualize(test_loader)
+        #base_model.visualize(paint_loader, n = 10)
+        base_model.visualize(test_loader)
         
 if __name__ == "__main__":
     main()
